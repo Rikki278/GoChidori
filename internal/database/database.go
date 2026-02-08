@@ -1,6 +1,7 @@
 package database
 
 import (
+	"GoChidori/internal/models"
 	"log"
 	"time"
 
@@ -8,7 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
-
 
 func Connect(dsn string) *gorm.DB {
 	gormConfig := &gorm.Config{
@@ -18,10 +18,24 @@ func Connect(dsn string) *gorm.DB {
 		},
 	}
 
-
 	db, err := gorm.Open(postgres.Open(dsn), gormConfig)
 	if err != nil {
 		log.Println("failed to connect database")
+		return nil
+	}
+
+	log.Println("running database migrations")
+
+	err = db.AutoMigrate(
+		&models.UserProfile{}, 
+		&models.CharacterPost{}, 
+		&models.PostLike{}, 
+		&models.PostComment{}, 
+		&models.UserFavoritePost{}, 
+		&models.UserRelationship{})
+
+	if err != nil {
+		log.Println("failed to migrate database")
 		return nil
 	}
 
@@ -34,13 +48,11 @@ func Connect(dsn string) *gorm.DB {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-
 	log.Println("connected to database")
 
 	return db
 
 }
-
 
 func Close(db *gorm.DB) error {
 	sqlDB, err := db.DB()
